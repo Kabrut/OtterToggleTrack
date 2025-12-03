@@ -1,0 +1,92 @@
+{
+  "name": "ottertoggletrack",
+  "displayName": "OtterToggleTrack",
+  "description": "VS Code extension for time tracking and work management with Toggl Track integration",
+  "version": "0.0.1",
+  "publisher": "your-publisher-name",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-username/ottertoggletrack"
+  },
+  "icon": "images/icon.png",
+  "engines": {
+    "vscode": "^1.106.1"
+  },
+  "categories": [
+    "Other"
+  ],
+  "keywords": [
+    "toggl",
+    "time tracking",
+    "productivity",
+    "time management"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "ottertoggletrack.showMenu",
+        "title": "Toggl: Show Menu",
+        "icon": "$(clock)"
+      },
+      {
+        "command": "ottertoggletrack.startTimer",
+        "title": "Toggl: Start Timer",
+        "icon": "$(play)"
+      },
+      {
+        "command": "ottertoggletrack.stopTimer",
+        "title": "Toggl: Stop Timer",
+        "icon": "$(debug-stop)"
+      },
+      {
+        "command": "ottertoggletrack.setApiToken",
+        "title": "Toggl: Set API Token",
+        "icon": "$(key)"
+      },
+      {
+        "command": "ottertoggletrack.recentEntries",
+        "title": "Toggl: Recent Entries",
+        "icon": "$(history)"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "ottertoggletrack.showMenu",
+        "key": "ctrl+shift+t",
+        "mac": "cmd+shift+t"
+      },
+      {
+        "command": "ottertoggletrack.startTimer",
+        "key": "ctrl+alt+s",
+        "mac": "cmd+alt+s"
+      },
+      {
+        "command": "ottertoggletrack.stopTimer",
+        "key": "ctrl+alt+x",
+        "mac": "cmd+alt+x"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src",
+    "test": "vscode-test"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.106.1",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "22.x",
+    "typescript-eslint": "^8.46.3",
+    "eslint": "^9.39.1",
+    "typescript": "^5.9.3",
+    "@vscode/test-cli": "^0.0.12",
+    "@vscode/test-electron": "^2.5.2"
+  }
+}
