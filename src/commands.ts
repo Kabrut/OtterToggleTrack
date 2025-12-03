@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { TogglApi, TogglProject, TogglWorkspace } from './togglApi';
+import { TogglApi, TogglWorkspace } from './togglApi';
 import { StatusBarManager } from './statusBar';
 
 export class CommandsManager {
@@ -11,6 +11,26 @@ export class CommandsManager {
     constructor(togglApi: TogglApi, statusBar: StatusBarManager) {
         this.togglApi = togglApi;
         this.statusBar = statusBar;
+    }
+
+    /**
+     * Initialize and check for running timer (called once at startup)
+     */
+    async initialize(): Promise<void> {
+        const isConnected = await this.togglApi.initialize();
+        if (isConnected) {
+            try {
+                // Fetch current entry only once at startup to restore state
+                const currentEntry = await this.togglApi.getCurrentTimeEntry();
+                if (currentEntry) {
+                    this.statusBar.restoreFromEntry(currentEntry);
+                }
+                const me = await this.togglApi.getMe();
+                this.currentWorkspaceId = me.default_workspace_id;
+            } catch (error) {
+                console.error('Failed to initialize:', error);
+            }
+        }
     }
 
     async setApiToken(): Promise<void> {
@@ -28,7 +48,12 @@ export class CommandsManager {
                 this.currentWorkspaceId = me.default_workspace_id;
                 this.workspaces = await this.togglApi.getWorkspaces();
                 vscode.window.showInformationMessage(`Connected to Toggl as ${me.fullname || me.email}`);
-                await this.statusBar.startUpdating();
+                
+                // Check for running timer after connecting
+                const currentEntry = await this.togglApi.getCurrentTimeEntry();
+                if (currentEntry) {
+                    this.statusBar.restoreFromEntry(currentEntry);
+                }
             } catch (error) {
                 await this.togglApi.clearApiToken();
                 vscode.window.showErrorMessage(`Failed to connect: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -50,13 +75,14 @@ export class CommandsManager {
             return;
         }
 
-        const currentEntry = this.statusBar.getCurrentEntry();
+        const isRunning = this.statusBar.isTimerRunning();
+        const timerState = this.statusBar.getTimerState();
         const items: vscode.QuickPickItem[] = [];
 
-        if (currentEntry) {
+        if (isRunning) {
             items.push({
                 label: '$(debug-stop) Stop Current Timer',
-                description: currentEntry.description || 'No description',
+                description: timerState.description || 'No description',
             });
         } else {
             items.push({
@@ -104,8 +130,13 @@ export class CommandsManager {
 
     async startTimer(): Promise<void> {
         if (!this.currentWorkspaceId) {
-            const me = await this.togglApi.getMe();
-            this.currentWorkspaceId = me.default_workspace_id;
+            try {
+                const me = await this.togglApi.getMe();
+                this.currentWorkspaceId = me.default_workspace_id;
+            } catch (error) {
+                vscode.window.showErrorMessage(`Failed to get workspace: ${error instanceof Error ? error.message : 'Unknown error'}`);
+                return;
+            }
         }
 
         const description = await vscode.window.showInputBox({
@@ -140,30 +171,32 @@ export class CommandsManager {
         }
 
         try {
-            await this.togglApi.startTimeEntry(
+            // Send start request to Toggl and start local timer
+            const entry = await this.togglApi.startTimeEntry(
                 this.currentWorkspaceId,
                 description || '',
                 projectId
             );
+            this.statusBar.startTimer(entry);
             vscode.window.showInformationMessage(`Started tracking: ${description || 'No description'}`);
-            await this.statusBar.update();
         } catch (error) {
             vscode.window.showErrorMessage(`Failed to start timer: ${error instanceof Error ? error.message : 'Unknown error'}`);
         }
     }
 
     async stopTimer(): Promise<void> {
-        const currentEntry = this.statusBar.getCurrentEntry();
+        const timerState = this.statusBar.getTimerState();
         
-        if (!currentEntry) {
+        if (!timerState.isRunning || !timerState.workspaceId || !timerState.entryId) {
             vscode.window.showInformationMessage('No timer running');
             return;
         }
 
         try {
-            await this.togglApi.stopTimeEntry(currentEntry.workspace_id, currentEntry.id);
-            vscode.window.showInformationMessage(`Stopped: ${currentEntry.description || 'No description'}`);
-            await this.statusBar.update();
+            // Send stop request to Toggl and stop local timer
+            await this.togglApi.stopTimeEntry(timerState.workspaceId, timerState.entryId);
+            this.statusBar.stopTimer();
+            vscode.window.showInformationMessage(`Stopped: ${timerState.description || 'No description'}`);
         } catch (error) {
             vscode.window.showErrorMessage(`Failed to stop timer: ${error instanceof Error ? error.message : 'Unknown error'}`);
         }
@@ -203,14 +236,14 @@ export class CommandsManager {
                     this.currentWorkspaceId = me.default_workspace_id;
                 }
 
-                await this.togglApi.startTimeEntry(
+                const entry = await this.togglApi.startTimeEntry(
                     this.currentWorkspaceId,
                     selected.entry.description || '',
                     selected.entry.project_id,
                     selected.entry.tags
                 );
+                this.statusBar.startTimer(entry);
                 vscode.window.showInformationMessage(`Continued: ${selected.entry.description || 'No description'}`);
-                await this.statusBar.update();
             }
         } catch (error) {
             vscode.window.showErrorMessage(`Failed to get recent entries: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -249,7 +282,7 @@ export class CommandsManager {
 
         if (confirm === 'Yes') {
             await this.togglApi.clearApiToken();
-            this.statusBar.stopUpdating();
+            this.statusBar.stopTimer();
             vscode.window.showInformationMessage('Disconnected from Toggl');
         }
     }

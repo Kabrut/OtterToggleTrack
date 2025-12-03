@@ -4,6 +4,24 @@ All notable changes to the "ottertoggletrack" extension will be documented in th
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
-## [Unreleased]
+## [0.0.2] - 2025-12-03
 
+### Changed
+- Timer now uses local system time instead of polling Toggl API
+- Reduced API calls to minimize rate limiting issues
+- Status bar updates every second using local clock
+
+### Fixed
+- Fixed Toggl API rate limit issues by removing continuous polling
+
+## [0.0.1] - 2025-12-03
+
+### Added
 - Initial release
+- Status bar integration with timer display
+- Start/Stop timer functionality
+- Project selection when starting timer
+- Recent entries list to continue previous tasks
+- Workspace switching support
+- Secure API token storage using VS Code SecretStorage
+- Keyboard shortcuts (Ctrl+Shift+T, Ctrl+Alt+S, Ctrl+Alt+X)

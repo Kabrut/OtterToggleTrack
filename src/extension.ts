@@ -9,14 +9,11 @@ export async function activate(context: vscode.ExtensionContext) {
 	console.log('OtterToggleTrack is now active!');
 
 	const togglApi = new TogglApi(context);
-	statusBar = new StatusBarManager(togglApi);
+	statusBar = new StatusBarManager();
 	const commands = new CommandsManager(togglApi, statusBar);
 
-	// Initialize if API token exists
-	const isConnected = await togglApi.initialize();
-	if (isConnected) {
-		await statusBar.startUpdating();
-	}
+	// Initialize - check for running timer once at startup
+	await commands.initialize();
 
 	// Register commands
 	context.subscriptions.push(
