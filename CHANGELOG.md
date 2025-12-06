@@ -1,8 +1,13 @@
 # Change Log
 
-All notable changes to the "ottertoggletrack" extension will be documented in this file.
+All notable changes to the "ottertoggltrack" extension will be documented in this file.
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
+
+## [0.0.3] - 2025-12-03
+
+### Fixed
+- Fixed "Recent Entries" functionality by adding authentication check
 
 ## [0.0.2] - 2025-12-03
 
@@ -10,9 +15,14 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 - Timer now uses local system time instead of polling Toggl API
 - Reduced API calls to minimize rate limiting issues
 - Status bar updates every second using local clock
+- Extension renamed from "OtterToggleTrack" to "OtterTogglTrack"
 
 ### Fixed
 - Fixed Toggl API rate limit issues by removing continuous polling
+- Fixed "Recent Entries" not checking authentication status
+
+### Added
+- Beautiful otter icon with clock
 
 ## [0.0.1] - 2025-12-03
 

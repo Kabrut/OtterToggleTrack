@@ -1,8 +1,8 @@
 {
   "name": "ottertoggletrack",
-  "displayName": "OtterToggleTrack",
+  "displayName": "OtterTogglTrack",
   "description": "VS Code extension for time tracking and work management with Toggl Track integration",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "publisher": "OtterSolutions",
   "repository": {
     "type": "git",

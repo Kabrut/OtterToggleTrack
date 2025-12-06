@@ -7,6 +7,8 @@ export class CommandsManager {
     private statusBar: StatusBarManager;
     private workspaces: TogglWorkspace[] = [];
     private currentWorkspaceId: number | undefined;
+    private syncInterval: NodeJS.Timeout | undefined;
+    private readonly SYNC_INTERVAL_MS = 15 * 60 * 1000; // 15 minutes
 
     constructor(togglApi: TogglApi, statusBar: StatusBarManager) {
         this.togglApi = togglApi;
@@ -21,15 +23,65 @@ export class CommandsManager {
         if (isConnected) {
             try {
                 // Fetch current entry only once at startup to restore state
-                const currentEntry = await this.togglApi.getCurrentTimeEntry();
-                if (currentEntry) {
-                    this.statusBar.restoreFromEntry(currentEntry);
-                }
+                await this.syncWithToggl();
                 const me = await this.togglApi.getMe();
                 this.currentWorkspaceId = me.default_workspace_id;
+                
+                // Start periodic sync every 15 minutes
+                this.startPeriodicSync();
             } catch (error) {
                 console.error('Failed to initialize:', error);
             }
+        }
+    }
+
+    /**
+     * Start periodic synchronization with Toggl API every 15 minutes
+     */
+    private startPeriodicSync(): void {
+        this.stopPeriodicSync(); // Clear any existing interval
+        this.syncInterval = setInterval(() => this.syncWithToggl(), this.SYNC_INTERVAL_MS);
+        console.log('OtterTogglTrack: Started periodic sync every 15 minutes');
+    }
+
+    /**
+     * Stop periodic synchronization
+     */
+    stopPeriodicSync(): void {
+        if (this.syncInterval) {
+            clearInterval(this.syncInterval);
+            this.syncInterval = undefined;
+        }
+    }
+
+    /**
+     * Sync local timer state with Toggl API
+     * This checks if there's a running entry on Toggl and updates local state accordingly
+     */
+    private async syncWithToggl(): Promise<void> {
+        try {
+            const currentEntry = await this.togglApi.getCurrentTimeEntry();
+            const localState = this.statusBar.getTimerState();
+
+            if (currentEntry) {
+                // There's a running entry on Toggl
+                if (!localState.isRunning || localState.entryId !== currentEntry.id) {
+                    // Either we weren't tracking or it's a different entry - sync from Toggl
+                    this.statusBar.restoreFromEntry(currentEntry);
+                    console.log('OtterTogglTrack: Synced running entry from Toggl:', currentEntry.description);
+                }
+                // If same entry is running locally, keep local timer (more accurate)
+            } else {
+                // No entry running on Toggl
+                if (localState.isRunning) {
+                    // We were tracking locally but Toggl shows no entry - someone stopped it elsewhere
+                    this.statusBar.stopTimer();
+                    console.log('OtterTogglTrack: Timer stopped externally, synced');
+                }
+            }
+        } catch (error) {
+            console.error('OtterTogglTrack: Sync failed:', error);
+            // Don't show error to user for background sync - just log it
         }
     }
 
@@ -49,11 +101,9 @@ export class CommandsManager {
                 this.workspaces = await this.togglApi.getWorkspaces();
                 vscode.window.showInformationMessage(`Connected to Toggl as ${me.fullname || me.email}`);
                 
-                // Check for running timer after connecting
-                const currentEntry = await this.togglApi.getCurrentTimeEntry();
-                if (currentEntry) {
-                    this.statusBar.restoreFromEntry(currentEntry);
-                }
+                // Check for running timer after connecting and start periodic sync
+                await this.syncWithToggl();
+                this.startPeriodicSync();
             } catch (error) {
                 await this.togglApi.clearApiToken();
                 vscode.window.showErrorMessage(`Failed to connect: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -203,6 +253,19 @@ export class CommandsManager {
     }
 
     async showRecentEntries(): Promise<void> {
+        const isConnected = await this.togglApi.initialize();
+        
+        if (!isConnected) {
+            const action = await vscode.window.showQuickPick(
+                ['Configure API Token'],
+                { placeHolder: 'Toggl is not configured' }
+            );
+            if (action === 'Configure API Token') {
+                await this.setApiToken();
+            }
+            return;
+        }
+
         try {
             const entries = await this.togglApi.getRecentTimeEntries();
             

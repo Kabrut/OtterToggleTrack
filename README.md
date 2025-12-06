@@ -1,4 +1,4 @@
-# OtterToggleTrack
+# OtterTogglTrack
 
 A VS Code extension for seamless time tracking with Toggl Track integration.
 
@@ -59,6 +59,18 @@ This extension stores your API token securely using VS Code's built-in secret st
 None at this time. Please report issues on the GitHub repository.
 
 ## Release Notes
+
+### 0.0.3
+
+- **Bug Fix**: Fixed "Recent Entries" functionality by adding authentication check
+
+### 0.0.2
+
+- **Performance**: Timer now uses local system time instead of polling Toggl API
+- **API Optimization**: Reduced API calls to minimize rate limiting issues  
+- **UI**: Status bar updates every second using local clock
+- **Bug Fix**: Fixed Toggl API rate limit issues by removing continuous polling
+- **UI**: Added beautiful otter icon
 
 ### 0.0.1
 
