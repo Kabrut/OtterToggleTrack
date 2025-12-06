@@ -4,6 +4,13 @@ All notable changes to the "ottertoggltrack" extension will be documented in thi
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [0.0.4] - 2025-12-06
+
+### Added
+- Automatic synchronization with Toggl API every 15 minutes
+- Cross-device support: detects timers started/stopped from other devices
+- Smart sync logic: only updates when local and remote state differ
+
 ## [0.0.3] - 2025-12-03
 
 ### Fixed

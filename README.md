@@ -10,6 +10,7 @@ A VS Code extension for seamless time tracking with Toggl Track integration.
 - **Recent Entries**: Quickly continue tracking from recent time entries
 - **Workspace Support**: Switch between multiple Toggl workspaces
 - **Secure API Token Storage**: Your API token is stored securely using VS Code's secret storage
+- **Cross-Device Sync**: Automatically syncs with Toggl every 15 minutes to detect timers started from other devices
 
 ## Installation
 
@@ -59,6 +60,12 @@ This extension stores your API token securely using VS Code's built-in secret st
 None at this time. Please report issues on the GitHub repository.
 
 ## Release Notes
+
+### 0.0.4
+
+- **Sync**: Added automatic synchronization with Toggl API every 15 minutes
+- **Cross-Device Support**: Detects timers started/stopped from other devices (phone, browser)
+- **Smart Sync**: Only updates when there's a difference between local and remote state
 
 ### 0.0.3
 
